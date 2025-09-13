@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:h="http://xmlns.jcp.org/jsf/html"
+  xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+  xmlns:f="http://xmlns.jcp.org/jsf/core"
+  xmlns:p="http://primefaces.org/ui"
+>
+  <ui:composition template="/WEB-INF/templates/layout.xhtml">
+    <ui:define name="content">
+      <div class="card">
+        <h2>Administración de Proyectos</h2>
+
+        <h:form id="formTask">
+          <div style="margin-bottom: 0.75rem">
+            <p:commandButton
+              value="Nuevo Proyecto"
+              icon="pi pi-plus"
+              actionListener="#{projectController.prepareCreate}"
+              oncomplete="PF('dlg').show()"
+              update=":dlg"
+              styleClass="p-button-rounded"
+            />
+          </div>
+
+          <div class="p-inputgroup" style="margin-bottom: 1rem">
+            <p:inputText
+              value="#{projectController.query}"
+              placeholder="Buscar por nombre/propietario"
+            />
+            <p:commandButton
+              value="Buscar"
+              action="#{projectController.search}"
+              update="table :globalGrowl"
+              icon="pi pi-search"
+            />
+          </div>
+
+          <p:dataTable
+            id="table"
+            widgetVar="tableWidget"
+            value="#{projectController.projects}"
+            var="p"
+            rowKey="#{p.id}"
+            paginator="true"
+            rows="10"
+            responsiveLayout="scroll"
+            styleClass="p-datatable-striped p-datatable-gridlines"
+          >
+            <p:column style="width: 16px">
+              <p:rowToggler />
+            </p:column>
+
+            <p:column headerText="ID" width="30">#{p.id}</p:column>
+            <p:column headerText="Nombre">
+              <b>#{p.name}</b>
+            </p:column>
+            <p:column headerText="Propietario" width="140">
+              #{p.owner}
+            </p:column>
+            <p:column headerText="Estado" width="100">
+              <h:panelGroup
+                rendered="#{p.status == 'ACTIVE'}"
+                style="color: rgb(0, 110, 255)"
+              >
+                <i class="pi pi-check-circle"></i> ACTIVE
+              </h:panelGroup>
+              <h:panelGroup
+                rendered="#{p.status == 'ON_HOLD'}"
+                style="color: orange"
+              >
+                <i class="pi pi-exclamation-triangle"></i> ON HOLD
+              </h:panelGroup>
+              <h:panelGroup
+                rendered="#{p.status == 'IN_PROGRESS'}"
+                style="color: purple"
+              >
+                <i class="pi pi-spinner pi-spin"></i> IN PROGRESS
+              </h:panelGroup>
+              <h:panelGroup
+                rendered="#{p.status == 'DONE'}"
+                style="color: green"
+              >
+                <i class="pi pi-check"></i> DONE
+              </h:panelGroup>
+            </p:column>
+
+            <p:column headerText="Fecha de Creación" width="100">
+              <h:outputText value="#{p.createdAtFormatted}" />
+            </p:column>
+
+            <p:column headerText="Descripción" width="200">
+              <h:outputText value="#{p.description}" />
+            </p:column>
+
+            <p:column headerText="Acciones" width="210">
+              <p:commandButton
+                icon="pi pi-pencil"
+                value="Editar"
+                actionListener="#{projectController.prepareEdit(p)}"
+                oncomplete="PF('dlg').show()"
+                update=":dlg"
+                styleClass="p-button-text p-button-sm"
+              />
+              <p:commandButton
+                icon="pi pi-trash"
+                value="Eliminar"
+                actionListener="#{projectController.delete(p)}"
+                update="@form :globalGrowl"
+                styleClass="p-button-danger p-button-text p-button-sm"
+                onclick="return confirm('¿Eliminar este Proyecto?')"
+              />
+            </p:column>
+
+            <p:rowExpansion>
+              <div class="p-3">
+                <h:panelGrid columns="2" cellpadding="5">
+                  <h:outputLabel value="Nombre:" />
+                  <h:outputText value="#{p.name}" />
+
+                  <h:outputLabel value="Propietario:" />
+                  <h:outputText value="#{p.owner}" />
+
+                  <h:outputLabel value="Estado:" />
+                  <h:outputText value="#{p.status}" />
+
+                  <h:outputLabel value="Fecha de creación:" />
+                  <h:outputText value="#{p.createdAtFormatted}" />
+
+                  <h:outputLabel value="Descripción:" />
+                  <h:outputText value="#{p.description}" />
+                </h:panelGrid>
+              </div>
+            </p:rowExpansion>
+          </p:dataTable>
+        </h:form>
+      </div>
+
+        <p:dialog
+                id="dlg"
+                widgetVar="dlg"
+                header="#{projectController.editMode ? 'Editar Proyecto' : 'Nuevo Proyecto'}"
+                modal="true"
+                closable="true"
+                resizable="false"
+                width="400"
+                height="400"
+
+        >
+
+        <h:form id="formDialog">
+          <div class="container-fluid">
+            <div class="form-group row">
+              <label for="name" class="col-sm-4 col-form-label">Nombre</label>
+              <div class="col-sm-8">
+                <p:inputText
+                  id="name"
+                  styleClass="form-control"
+                  value="#{projectController.selected.name}"
+                  required="true"
+                  requiredMessage="El nombre es obligatorio"
+                />
+                <p:message for="name" styleClass="text-danger small" />
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label for="owner" class="col-sm-4 col-form-label"
+                >Propietario</label
+              >
+              <div class="col-sm-8">
+                <p:inputText
+                  id="owner"
+                  styleClass="form-control"
+                  value="#{projectController.selected.owner}"
+                  required="true"
+                  requiredMessage="El propietario es obligatorio"
+                />
+                <p:message for="owner" styleClass="text-danger small" />
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label for="status" class="col-sm-4 col-form-label">Estado</label>
+              <div class="col-sm-8">
+                <p:selectOneMenu
+                  id="status"
+                  styleClass="form-control"
+                  value="#{projectController.selected.status}"
+                  required="true"
+                  requiredMessage="El estado es obligatorio"
+                >
+                  <f:selectItem itemLabel="Seleccione Uno" itemValue="" />
+                  <f:selectItem itemLabel="ACTIVE" itemValue="ACTIVE" />
+                  <f:selectItem itemLabel="ON HOLD" itemValue="ON_HOLD" />
+                  <f:selectItem
+                    itemLabel="IN PROGRESS"
+                    itemValue="IN_PROGRESS"
+                  />
+                  <f:selectItem itemLabel="DONE" itemValue="DONE" />
+                </p:selectOneMenu>
+                <p:message for="status" styleClass="text-danger small" />
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label for="createdAt" class="col-sm-4 col-form-label"
+                >Fecha de Creación</label
+              >
+              <div class="col-sm-8">
+                <p:calendar
+                  id="createdAt"
+                  pattern="dd/MM/yyyy HH:mm:ss"
+                  mask="true"
+                  value="#{projectController.calendarCreatedAt}"
+                  styleClass="form-control"
+                  required="true"
+                  requiredMessage="La fecha de creación es obligatoria"
+                >
+                  <f:convertDateTime pattern="dd/MM/yyyy HH:mm:ss" />
+                </p:calendar>
+                <p:message for="createdAt" styleClass="text-danger small" />
+              </div>
+            </div>
+
+            <div class="form-group row">
+              <label for="description" class="col-sm-4 col-form-label"
+                >Descripción</label
+              >
+              <div class="col-sm-8">
+                <p:inputTextarea
+                  id="description"
+                  rows="3"
+                  autoResize="true"
+                  styleClass="form-control"
+                  value="#{projectController.selected.description}"
+                  required="true"
+                  requiredMessage="La descripción es obligatoria"
+                />
+                <p:message for="description" styleClass="text-danger small" />
+              </div>
+            </div>
+
+            <div class="form-group row mt-3">
+              <div class="col-sm-12 text-end">
+                <p:commandButton
+                  value="Guardar"
+                  action="#{projectController.save}"
+                  update=":formTask :globalGrowl"
+                  oncomplete="PF('dlg').hide()"
+                  styleClass="p-button-rounded p-button-success"
+                />
+              </div>
+            </div>
+          </div>
+        </h:form>
+      </p:dialog>
+    </ui:define>
+  </ui:composition>
+</html>

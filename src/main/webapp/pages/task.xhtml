@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html
+  xmlns="http://www.w3.org/1999/xhtml"
+  xmlns:h="http://xmlns.jcp.org/jsf/html"
+  xmlns:ui="http://xmlns.jcp.org/jsf/facelets"
+  xmlns:f="http://xmlns.jcp.org/jsf/core"
+  xmlns:p="http://primefaces.org/ui"
+>
+  <ui:composition template="/WEB-INF/templates/layout.xhtml">
+    <ui:define name="content">
+      <div class="card">
+        <h2>Administración de Tareas</h2>
+        <h:form id="formTask">
+          <div style="margin-bottom: 0.75rem">
+            <p:commandButton
+              value="Nueva Tarea"
+              icon="pi pi-plus"
+              actionListener="#{taskController.prepareCreate}"
+              oncomplete="PF('dlg').show()"
+              update=":dlg"
+              styleClass="p-button-rounded"
+            />
+          </div>
+
+          <p:dataTable
+            value="#{taskController.tasks}"
+            var="p"
+            paginator="true"
+            rows="10"
+            responsiveLayout="scroll"
+            styleClass="p-datatable-striped p-datatable-gridlines"
+          >
+            <p:column headerText="ID" width="80">#{p.id}</p:column>
+            <p:column headerText="Titulo"><b>#{p.title}</b></p:column>
+              <p:column headerText="Proyecto"><b>#{taskController.getProjectNameById(p.projectId)}</b></p:column>
+            <p:column headerText="Prioridad" width="140">
+                <h:panelGroup rendered="#{p.priority == 'LOW'}" style="color: green;">
+                    <i class="pi pi-check-circle"></i> LOW
+                </h:panelGroup>
+                <h:panelGroup rendered="#{p.priority == 'MEDIUM'}" style="color: orange;">
+                    <i class="pi pi-exclamation-triangle"></i> MEDIUM
+                </h:panelGroup>
+                <h:panelGroup rendered="#{p.priority == 'HIGH'}" style="color: red;">
+                    <i class="pi pi-times-circle"></i> HIGH
+                </h:panelGroup>
+            </p:column>
+            <p:column headerText="Fecha Límite" width="100">
+                  <h:outputText value="#{p.dueDateFormatted}" />
+            </p:column>
+            <p:column headerText="Completado" width="100">
+                <h:panelGroup rendered="#{p.done}" style="color: green;">
+                    <i class="pi pi-check"></i> Sí
+                </h:panelGroup>
+                <h:panelGroup rendered="#{!p.done}" style="color: red;">
+                    <i class="pi pi-times"></i> No
+                </h:panelGroup>
+            </p:column>
+            <p:column headerText="Acciones" width="210">
+              <p:commandButton
+                icon="pi pi-pencil"
+                value="Editar"
+                actionListener="#{taskController.prepareEdit(p)}"
+                oncomplete="PF('dlg').show()"
+                update=":dlg"
+                styleClass="p-button-text p-button-sm"
+              />
+              <p:commandButton
+                icon="pi pi-trash"
+                value="Eliminar"
+                actionListener="#{taskController.delete(p)}"
+                update="@form :globalGrowl"
+                styleClass="p-button-danger p-button-text p-button-sm"
+                onclick="return confirm('¿Eliminar esta Tarea?')"
+              />
+            </p:column>
+          </p:dataTable>
+        </h:form>
+      </div>
+
+      <!-- Diálogo de alta/edición -->
+      <p:dialog
+        id="dlg"
+        widgetVar="dlg"
+        header="#{taskController.editMode ? 'Editar Tarea' : 'Nuevo Tarea'}"
+        modal="true"
+        closable="true"
+        resizable="false"
+        width="500"
+      >
+        <h:form id="formDialog">
+          <h:panelGrid
+            columns="2"
+            columnClasses="muted,"
+            styleClass="p-fluid"
+            style="row-gap: 0.75rem"
+          >
+            <h:outputText value="Nombre" />
+            <p:inputText
+              value="#{taskController.selected.title}"
+              required="true"
+            />
+              <h:outputText value="Proyecto" />
+              <p:selectOneMenu value="#{taskController.selected.projectId}" required="true" >
+                  <f:selectItem itemLabel="-- Seleccione Proyecto --" itemValue="" />
+                  <f:selectItems value="#{taskController.projects}" var="proj" itemLabel="#{proj.name}" itemValue="#{proj.id}" />
+              </p:selectOneMenu>
+
+
+
+              <h:outputText value="Prioridad" />
+            <p:selectOneMenu value="#{taskController.selected.priority}" required="true">
+                <f:selectItem itemLabel="Seleccione Uno" itemValue="" />
+                <f:selectItem itemLabel="LOW" itemValue="LOW" />
+                <f:selectItem itemLabel="MEDIUM" itemValue="MEDIUM" />
+                <f:selectItem itemLabel="HIGH" itemValue="HIGH" />
+            </p:selectOneMenu>
+
+            <h:outputText value="Fecha Límite" />
+            <p:calendar
+              value="#{taskController.calendarDueDate}"
+              pattern="dd/MM/yyyy HH:mm:ss"
+              mask="true"
+            >
+                <f:convertDateTime pattern="dd/MM/yyyy HH:mm:ss" type="both" />
+            </p:calendar>
+
+            <h:outputText value="Notas" />
+            <p:inputTextarea
+              rows="3"
+              autoResize="true"
+              value="#{taskController.selected.notes}"
+            />
+
+            <h:outputText value="Completado" />
+            <p:selectBooleanCheckbox
+              value="#{taskController.selected.done}"
+            />
+          </h:panelGrid>
+
+          <div
+            style="
+              margin-top: 1rem;
+              display: flex;
+              gap: 0.5rem;
+              justify-content: flex-end;
+            "
+          >
+            <p:commandButton
+              value="Guardar"
+              icon="pi pi-check"
+              actionListener="#{taskController.save}"
+              update=":formTask :globalGrowl"
+              oncomplete="PF('dlg').hide()"
+            />
+            <p:commandButton
+              value="Cancelar"
+              type="button"
+              icon="pi pi-times"
+              onclick="PF('dlg').hide()"
+              styleClass="p-button-secondary"
+            />
+          </div>
+        </h:form>
+      </p:dialog>
+    </ui:define>
+  </ui:composition>
+</html>
